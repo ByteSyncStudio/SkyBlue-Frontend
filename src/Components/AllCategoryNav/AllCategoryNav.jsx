@@ -26,6 +26,18 @@ const AllCategoryNav = () => {
   const { isCategoryNavOpen, toggleCategoryNav } = useCategoryNav();
   const navigate = useNavigate();
 
+  // Scroll mobile view to top whenever level changes
+  useEffect(() => {
+    if (windowWidth < 768 && navigationRef.current) {
+      const mobileView = navigationRef.current.querySelector(
+        ".category-mobile-view"
+      );
+      if (mobileView) {
+        mobileView.scrollTop = 0;
+      }
+    }
+  }, [currentLevel, windowWidth]);
+
   // Update window width
   useEffect(() => {
     const handleResize = () => {
@@ -100,7 +112,10 @@ const AllCategoryNav = () => {
   // Navigate to a subcategory (desktop columns)
   const navigateToSubcategory = (category, level) => {
     // If clicking same selected category -> redirect
-    if (navigationPath[level] && navigationPath[level].selected === category.Id) {
+    if (
+      navigationPath[level] &&
+      navigationPath[level].selected === category.Id
+    ) {
       redirect(category.Id);
       return;
     }
@@ -111,7 +126,11 @@ const AllCategoryNav = () => {
       selected: category.Id,
     };
 
-    if (category.children && category.children.length > 0 && level < MAX_DEPTH_TO_DISPLAY) {
+    if (
+      category.children &&
+      category.children.length > 0 &&
+      level < MAX_DEPTH_TO_DISPLAY
+    ) {
       newPath.push({
         level: level + 1,
         categories: category.children,
@@ -128,18 +147,28 @@ const AllCategoryNav = () => {
 
   // Redirect helper (navigates then closes & resets)
   const redirect = (id) => {
-    navigate(`/category/${id}`);
-    // close and reset so next open starts from top
-    resetNavigationState();
-    toggleCategoryNav();
-  };
+  navigate(`/category/${id}`);
+  
+  // Scroll top on mobile
+  if (windowWidth < 768 && navigationRef.current) {
+    const mobileView = navigationRef.current.querySelector(".category-mobile-view");
+    if (mobileView) mobileView.scrollTop = 0;
+  }
 
-  // Navigate to home/all categories
-  const navigateToHome = () => {
-    navigate("/");
-    resetNavigationState();
-    toggleCategoryNav();
-  };
+  resetNavigationState();
+  toggleCategoryNav();
+};
+
+const navigateToHome = () => {
+  navigate("/");
+  if (windowWidth < 768 && navigationRef.current) {
+    const mobileView = navigationRef.current.querySelector(".category-mobile-view");
+    if (mobileView) mobileView.scrollTop = 0;
+  }
+  resetNavigationState();
+  toggleCategoryNav();
+};
+
 
   // Build breadcrumbs (display only)
   const generateBreadcrumbs = () => {
@@ -181,7 +210,9 @@ const AllCategoryNav = () => {
             levelData.categories.map((category) => (
               <li
                 key={category.Id}
-                className={`category-item ${levelData.selected === category.Id ? "selected" : ""}`}
+                className={`category-item ${
+                  levelData.selected === category.Id ? "selected" : ""
+                }`}
               >
                 <div
                   className="category-header"
@@ -190,24 +221,30 @@ const AllCategoryNav = () => {
                   <span className="category-name">{category.Name}</span>
                   {category.children && category.children.length > 0 && (
                     <span className="chevron-container">
-                      <FontAwesomeIcon icon={faChevronRight} className="chevron-icon" />
+                      <FontAwesomeIcon
+                        icon={faChevronRight}
+                        className="chevron-icon"
+                      />
                     </span>
                   )}
                 </div>
 
                 {/* Show "View More" on desktop/tablet at max depth when deeper children exist */}
-                {level === MAX_DEPTH_TO_DISPLAY && hasNestedChildren(category) && (
-                  <div
-                    className="view-more-link"
-                    onClick={() => redirect(category.Id)}
-                  >
-                    View More
-                  </div>
-                )}
+                {level === MAX_DEPTH_TO_DISPLAY &&
+                  hasNestedChildren(category) && (
+                    <div
+                      className="view-more-link"
+                      onClick={() => redirect(category.Id)}
+                    >
+                      View More
+                    </div>
+                  )}
               </li>
             ))
           ) : (
-            <li className="empty-category-message">No subcategories available</li>
+            <li className="empty-category-message">
+              No subcategories available
+            </li>
           )}
         </ul>
       </div>
@@ -262,8 +299,14 @@ const AllCategoryNav = () => {
               {index === 0 && (
                 <li className="mobile-category-item">
                   <div className="mobile-category-header">
-                    <span className="mobile-category-name" onClick={navigateToHome}>
-                      <FontAwesomeIcon icon={faHome} style={{ marginRight: "8px" }} />
+                    <span
+                      className="mobile-category-name"
+                      onClick={navigateToHome}
+                    >
+                      <FontAwesomeIcon
+                        icon={faHome}
+                        style={{ marginRight: "8px" }}
+                      />
                       Home / All Categories
                     </span>
                   </div>
@@ -274,7 +317,9 @@ const AllCategoryNav = () => {
                 levelData.categories.map((category) => (
                   <li
                     key={category.Id}
-                    className={`mobile-category-item ${levelData.selected === category.Id ? "selected" : ""}`}
+                    className={`mobile-category-item ${
+                      levelData.selected === category.Id ? "selected" : ""
+                    }`}
                   >
                     <div className="mobile-category-header">
                       <span
@@ -290,13 +335,22 @@ const AllCategoryNav = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             // if we're at max depth and it has deeper children -> go to category page
-                            if (index === MAX_DEPTH_TO_DISPLAY && hasNestedChildren(category)) {
+                            if (
+                              index === MAX_DEPTH_TO_DISPLAY &&
+                              hasNestedChildren(category)
+                            ) {
                               redirect(category.Id);
                             } else {
                               // open next level
                               // ensure navigationPath has this level set
-                              const newPath = navigationPath.slice(0, index + 1);
-                              newPath[index] = { ...newPath[index], selected: category.Id };
+                              const newPath = navigationPath.slice(
+                                0,
+                                index + 1
+                              );
+                              newPath[index] = {
+                                ...newPath[index],
+                                selected: category.Id,
+                              };
                               newPath.push({
                                 level: index + 1,
                                 categories: category.children || [],
@@ -314,18 +368,21 @@ const AllCategoryNav = () => {
                     </div>
 
                     {/* Show "View More" on mobile at max depth if deeper children exist */}
-                    {index === MAX_DEPTH_TO_DISPLAY && hasNestedChildren(category) && (
-                      <div
-                        className="mobile-view-more"
-                        onClick={() => redirect(category.Id)}
-                      >
-                        View More
-                      </div>
-                    )}
+                    {index === MAX_DEPTH_TO_DISPLAY &&
+                      hasNestedChildren(category) && (
+                        <div
+                          className="mobile-view-more"
+                          onClick={() => redirect(category.Id)}
+                        >
+                          View More
+                        </div>
+                      )}
                   </li>
                 ))
               ) : (
-                <li className="empty-category-message">No subcategories available</li>
+                <li className="empty-category-message">
+                  No subcategories available
+                </li>
               )}
             </ul>
           </div>
@@ -349,12 +406,16 @@ const AllCategoryNav = () => {
   return (
     <>
       <div
-        className={`all-category-nav-overlay ${isCategoryNavOpen ? "open" : ""}`}
+        className={`all-category-nav-overlay ${
+          isCategoryNavOpen ? "open" : ""
+        }`}
         onClick={handleOverlayClick}
         aria-hidden="true"
       />
       <div
-        className={`all-category-nav-container ${isCategoryNavOpen ? "open" : ""}`}
+        className={`all-category-nav-container ${
+          isCategoryNavOpen ? "open" : ""
+        }`}
         ref={navigationRef}
         role="dialog"
         aria-modal="true"
@@ -378,7 +439,9 @@ const AllCategoryNav = () => {
             renderMobileView()
           ) : (
             <div className="category-columns-container">
-              {navigationPath.map((levelData, index) => renderCategoryColumn(levelData, index))}
+              {navigationPath.map((levelData, index) =>
+                renderCategoryColumn(levelData, index)
+              )}
             </div>
           )}
         </div>
